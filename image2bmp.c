@@ -1,8 +1,7 @@
 /*
  * Convert common image format encode to RGBA_8888(BMP) for Android Device
  *
- *
- *
+ * Author: lbtrace(coder.wlb@gmail.com)
  */
 
 #include <stdio.h>
@@ -19,24 +18,24 @@
 #define DBG_JPEG 1
 #define FB_PATH "/dev/graphics/fb0"
 
-// record device screen info
-struct FB {
+// Record device screen info
+typedef struct screen_info {
 	int fd;
 	struct fb_var_screeninfo vi;
-};
+} screen_info_t;
 
-// a pixel of RGBA_8888 
+// A pixel of RGBA_8888
 typedef struct rgba {
 	unsigned char r;
 	unsigned char g;
 	unsigned char b;
 	unsigned char a;
-}rgba_t;
+} rgba_t;
 
 // bmp after decode JPEG  
-static rgba_t  *src_bmp;
+static rgba_t *src_bmp;
 // final bmp after scale
-static rgba_t  *dest_bmp;
+static rgba_t *dest_bmp;
 
 static unsigned int src_h;
 static unsigned int src_w;
@@ -46,24 +45,30 @@ static unsigned int dest_w = 720;
 // Get screen info from FB driver
 static void init_dest_size(void)
 {
-	struct FB *fb;
+	screen_info_t *si;
 
-	fb = (struct FB *)malloc(sizeof(struct FB));
-	fb->fd = open(FB_PATH, O_RDWR);
-	if (fb->fd < 0) {
-		// TODO
-		return;
+	si = (screen_info_t *)malloc(sizeof(screen_info_t));
+    if (!si) {
+        goto malloc_fail;
+    }
+    
+	si->fd = open(FB_PATH, O_RDWR);
+	if (si->fd < 0) {
+        goto open_fail;
 	}
 
-	if (ioctl(fb->fd, FBIOGET_VSCREENINFO, &fb->vi) < 0)
-		return;
+	if (ioctl(si->fd, FBIOGET_VSCREENINFO, &si->vi) < 0)
+        goto ioctl_fail;
 
-	dest_w = fb->vi.xres;
-	dest_h = fb->vi.yres;
+	dest_w = si->vi.xres;
+	dest_h = si->vi.yres;
 	fprintf(stderr, "device screen : %d X %d\n", dest_h, dest_w);
 	
-	close(fb->fd);
-	free(fb);
+ioctl_fail:
+	close(si->fd);
+open_fail:
+	free(si);
+malloc_fail:
 }
 
 /* 
@@ -148,6 +153,7 @@ static void alloc_bmp_buf(void)
 	dest_bmp = (rgba_t *)calloc(dest_h * dest_w, sizeof(rgba_t)); 
 	if (!dest_bmp) {
 		fprintf(stderr, "dest_bmp alloc fail!");
+        free(src_bmp);
 		return;
 	}
 }
@@ -279,5 +285,6 @@ int image2bmp(const char *input_file, const char *output_file)
 	scale_bmp();
 	write_output_bmp(output_file);
 	free_bmp_buf();
+    
 	return ret;
 }
