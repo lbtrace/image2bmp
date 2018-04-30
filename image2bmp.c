@@ -54,11 +54,11 @@ static void init_dest_size(void)
     
 	si->fd = open(FB_PATH, O_RDWR);
 	if (si->fd < 0) {
-        goto open_fail;
+		goto open_fail;
 	}
 
 	if (ioctl(si->fd, FBIOGET_VSCREENINFO, &si->vi) < 0)
-        goto ioctl_fail;
+		goto ioctl_fail;
 
 	dest_w = si->vi.xres;
 	dest_h = si->vi.yres;
