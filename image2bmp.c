@@ -48,9 +48,9 @@ static void init_dest_size(void)
 	screen_info_t *si;
 
 	si = (screen_info_t *)malloc(sizeof(screen_info_t));
-    if (!si) {
-        goto malloc_fail;
-    }
+	if (!si) {
+		goto malloc_fail;
+	}
     
 	si->fd = open(FB_PATH, O_RDWR);
 	if (si->fd < 0) {
